@@ -37,7 +37,10 @@ display window expires.
    - `loops` — optional number of play-throughs; omit to loop until the
      TTL expires
    - `frame_delay` — optional, ms between frames (default 500; animated
-     sources use their own frame duration when available)
+     sources use their own frame duration when available). The panel
+     animates at a fixed rate (12.5 fps / 80 ms per frame at default
+     display speed), so ms values are rounded to whole refresh cycles —
+     the API response reports the effective delay
 
 3. The panel drops whatever it is showing and displays the image
    immediately. Submissions are held in the tracker's memory only — they
@@ -70,9 +73,9 @@ To use the uploader later without activating the venv first:
 the `FT_IMAGE_URL` environment variable.
 
 **API key:** generate one in the Flight Tracker web UI under
-**Data Source → Image Upload API → Generate Key**. The tracker stores only
-a SHA-256 hash of the key; generating a new key revokes the old one. Give
-the key to this script once and let it remember:
+**Data Source → Image Upload API → Generate Key** (you can view the
+current key there any time; generating a new key revokes the old one).
+Give the key to this script once and let it remember:
 
 ```bash
 ./image_uploader.py --key 'your-key-here' --remember-key

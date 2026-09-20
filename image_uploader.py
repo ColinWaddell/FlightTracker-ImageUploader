@@ -56,10 +56,7 @@ def to_frame_bytes(img: Image.Image, fit: str) -> bytes:
         # Scale so the image covers the panel, centre-crop the overflow.
         scale = max(PANEL_W / rgb.width, PANEL_H / rgb.height)
         scaled = rgb.resize(
-            (
-                max(1, math.ceil(rgb.width * scale)),
-                max(1, math.ceil(rgb.height * scale)),
-            ),
+            (max(1, math.ceil(rgb.width * scale)), max(1, math.ceil(rgb.height * scale))),
             Image.LANCZOS,
         )
         left = (scaled.width - PANEL_W) // 2
@@ -190,7 +187,7 @@ def parse_args(argv=None):
     parser.add_argument(
         "--url",
         default=os.environ.get("FT_IMAGE_URL", DEFAULT_URL),
-        help=f"Flight Tracker base URL (default: %(default)s)",
+        help="Flight Tracker base URL (default: %(default)s)",
     )
     parser.add_argument("--key", help="API key (otherwise see key resolution order)")
     parser.add_argument("--key-file", help="file containing the API key")
@@ -258,7 +255,9 @@ def main(argv=None) -> None:
         frames = [test_pattern()]
         frame_delay = args.frame_delay
     else:
-        frames, source_delay = load_frames(Path(args.image), args.fit, args.max_frames)
+        frames, source_delay = load_frames(
+            Path(args.image), args.fit, args.max_frames
+        )
         if args.frame_delay is not None:
             frame_delay = args.frame_delay
         elif len(frames) > 1 and source_delay:
@@ -279,6 +278,10 @@ def main(argv=None) -> None:
         if len(frames) > 1:
             details += f", delay {frame_delay}ms"
             details += f", loops {'forever' if args.loops == 0 else args.loops}"
+            hold = response.get("frame_hold")
+            effective = response.get("effective_frame_delay_ms")
+            if hold:
+                details += f" ({hold} panel frames, {effective}ms effective)"
         print(f"Uploaded ({status}): {details}")
     else:
         print(f"Unexpected response: {response}", file=sys.stderr)
