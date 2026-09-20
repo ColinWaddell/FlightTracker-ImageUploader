@@ -56,7 +56,10 @@ def to_frame_bytes(img: Image.Image, fit: str) -> bytes:
         # Scale so the image covers the panel, centre-crop the overflow.
         scale = max(PANEL_W / rgb.width, PANEL_H / rgb.height)
         scaled = rgb.resize(
-            (max(1, math.ceil(rgb.width * scale)), max(1, math.ceil(rgb.height * scale))),
+            (
+                max(1, math.ceil(rgb.width * scale)),
+                max(1, math.ceil(rgb.height * scale)),
+            ),
             Image.LANCZOS,
         )
         left = (scaled.width - PANEL_W) // 2
@@ -255,9 +258,7 @@ def main(argv=None) -> None:
         frames = [test_pattern()]
         frame_delay = args.frame_delay
     else:
-        frames, source_delay = load_frames(
-            Path(args.image), args.fit, args.max_frames
-        )
+        frames, source_delay = load_frames(Path(args.image), args.fit, args.max_frames)
         if args.frame_delay is not None:
             frame_delay = args.frame_delay
         elif len(frames) > 1 and source_delay:

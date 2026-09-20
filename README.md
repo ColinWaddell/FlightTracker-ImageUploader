@@ -1,7 +1,8 @@
 # FlightTracker-ImageUploader
 
-Push images to the [FlightTracker](https://github.com/ColinWaddell/FlightTracker)
-LED panel (64x32 RGB matrix) from the command line, via its Image Upload API.
+Command-line client that pushes images to the
+[FlightTracker](https://github.com/ColinWaddell/FlightTracker) LED panel
+(64x32 RGB matrix) over its Image Upload API.
 
 ```
 ./image_uploader.py photo.jpg
@@ -9,16 +10,15 @@ LED panel (64x32 RGB matrix) from the command line, via its Image Upload API.
 ./image_uploader.py --test
 ```
 
-Any format Pillow reads works — PNG, JPEG, WebP, GIF, BMP, TIFF...
-Still images are sent as a single frame; animated GIF/WebP files are sent as
-multi-frame animations. Frames are scaled to the panel: `--fit cover`
-(default) fills the panel and centre-crops the overflow; `--fit contain`
-fits inside and letterboxes with black.
+Any format Pillow can read works — PNG, JPEG, WebP, GIF, BMP, TIFF...
+Still images are sent as a single frame; animated GIF/WebP files are sent
+as multi-frame animations that play on the panel until they finish or the
+display window expires.
 
 ## How it works
 
 1. The image is converted to raw RGB — exactly **6144 bytes** per frame
-   (64 x 32 x 3), base64-encoded (~8192 chars).
+   (64 x 32 x 3), base64-encoded (~8192 characters).
 2. The uploader POSTs a JSON payload to `POST /api/image` with your key in
    the `X-API-Key` header:
 
@@ -31,57 +31,46 @@ fits inside and letterboxes with black.
    }
    ```
 
-   - `ttl` — required, seconds the image stays on screen (1 – 86400)
+   - `ttl` — required; seconds the image stays on screen (1 – 86400)
    - `data` — one entry per frame (1 – 60 frames); longer animations are
      sampled evenly down to the cap
-   - `loops` — optional play-throughs; omit to loop until the TTL expires
-   - `frame_delay` — optional ms between frames (default 500; animations
-     use the source's own duration when available)
+   - `loops` — optional number of play-throughs; omit to loop until the
+     TTL expires
+   - `frame_delay` — optional, ms between frames (default 500; animated
+     sources use their own frame duration when available)
 
-3. The panel drops whatever it is showing and displays the image immediately.
-   Images live in the tracker's memory only — they are lost on restart.
+3. The panel drops whatever it is showing and displays the image
+   immediately. Submissions are held in the tracker's memory only — they
+   are lost on restart.
 
-## The API key
+## Setup
 
-Generate or revoke the key in the Flight Tracker web UI:
-**Data Source → Image Upload API**. Only a SHA-256 hash of the key is
-stored server-side; generating a new key revokes the old one.
+**Requirements:** Python 3.9+ and
+[Pillow](https://pypi.org/project/pillow/). There are no other
+dependencies — HTTP is handled by the standard library.
 
-This script resolves the key in this order:
-
-1. `--key`
-2. `$FT_IMAGE_API_KEY`
-3. `--key-file`
-4. `~/.config/ft-image-upload/api_key` (default; written by `--remember-key`)
-
-The key is already provisioned on this machine at the default path. If you
-regenerate it in the web UI, update it here in one step:
-
-```
-./image_uploader.py --key 'the-new-key' --remember-key
+```bash
+pip install pillow
+git clone https://github.com/ColinWaddell/FlightTracker-ImageUploader.git
+cd FlightTracker-ImageUploader
 ```
 
-## Options
+**Flight Tracker address:** by default the uploader talks to
+`http://fivepi.local:8584`. Point it at your own tracker with `--url` or
+the `FT_IMAGE_URL` environment variable.
 
-| Flag | Meaning | Default |
-|---|---|---|
-| `--url` | Flight Tracker base URL | `$FT_IMAGE_URL` or `http://fivepi.local:8584` |
-| `--key` | API key inline | - |
-| `--key-file` | File containing the API key | - |
-| `--remember-key` | Store the provided key in the default key file | - |
-| `--ttl` | Seconds the image stays on screen | 300 |
-| `--loops` | Animation play-throughs (0 = loop until TTL) | 0 |
-| `--frame-delay` | ms between animation frames | source duration or 500 |
-| `--fit` | `cover` (fill + crop) or `contain` (fit + letterbox) | cover |
-| `--max-frames` | Animation frame cap (API maximum is 60) | 60 |
-| `--test` | Push a built-in colour-bars test pattern | - |
+**API key:** generate one in the Flight Tracker web UI under
+**Data Source → Image Upload API → Generate Key**. The tracker stores only
+a SHA-256 hash of the key; generating a new key revokes the old one. Give
+the key to this script once and let it remember:
 
-## Environment
+```bash
+./image_uploader.py --key 'your-key-here' --remember-key
+```
 
-| Variable | Purpose |
-|---|---|
-| `FT_IMAGE_URL` | Default Flight Tracker base URL |
-| `FT_IMAGE_API_KEY` | Default API key |
+The key is stored at `~/.config/ft-image-upload/api_key` (mode 600). You
+can instead pass it per-run with `--key`, keep it in a file and point at
+it with `--key-file`, or export it as `FT_IMAGE_API_KEY`.
 
 ## Examples
 
@@ -102,33 +91,67 @@ regenerate it in the web UI, update it here in one step:
 ./image_uploader.py --test --ttl 20
 
 # Talk to a tracker at a specific address
-./image_uploader.py --url http://10.0.0.55:8584 pic.jpg
+./image_uploader.py --url http://mytracker.local:8584 pic.jpg
 ```
 
-## Requirements
+## Command-line options
 
-- Python 3 (tested on 3.13) with [Pillow](https://pypi.org/project/pillow/)
-  — already installed system-wide on this machine
-- No other dependencies: HTTP is stdlib `urllib`
+| Flag | Meaning | Default |
+|---|---|---|
+| `--url` | Flight Tracker base URL | `$FT_IMAGE_URL` or `http://fivepi.local:8584` |
+| `--key` | API key inline | - |
+| `--key-file` | File containing the API key | - |
+| `--remember-key` | Store the provided key for future runs | - |
+| `--ttl` | Seconds the image stays on screen | 300 |
+| `--loops` | Animation play-throughs (0 = loop until TTL) | 0 |
+| `--frame-delay` | ms between animation frames | source duration or 500 |
+| `--fit` | `cover` (fill + crop) or `contain` (fit + letterbox) | cover |
+| `--max-frames` | Animation frame cap (API maximum is 60) | 60 |
+| `--test` | Push a built-in colour-bars test pattern | - |
+
+The key is resolved in this order: `--key`, then `$FT_IMAGE_API_KEY`,
+then `--key-file`, then the default key file
+(`~/.config/ft-image-upload/api_key`).
+
+## Environment variables
+
+| Variable | Purpose |
+|---|---|
+| `FT_IMAGE_URL` | Default Flight Tracker base URL |
+| `FT_IMAGE_API_KEY` | Default API key |
+
+## Fit modes
+
+- `cover` (default) — scales the image until it fills the whole panel,
+  then centre-crops the overflow. Best for photos on a panel whose aspect
+  ratio differs from the image.
+- `contain` — scales the image to fit entirely inside the panel and pads
+  the remainder with black. Keeps the whole image visible.
 
 ## Exit codes
 
 | Code | Meaning |
 |---|---|
 | 0 | Uploaded successfully |
-| 1 | API/HTTP error (message from the tracker is shown) |
+| 1 | API/HTTP error (the tracker's message is shown) |
 | 2 | Local error: missing image, bad options, no key |
 | 3 | Could not reach the tracker |
 
 ## Troubleshooting
 
-- **403 "no API key has been generated"** — the key was revoked or never
-  generated. Generate one in the web UI and update the local copy
-  (`--remember-key`).
-- **401 "Invalid or missing API key"** — the stored key doesn't match;
-  re-provision it as above.
-- **fivepi.local doesn't resolve** — use the Pi's IP directly
-  (`--url http://<ip>:8584`).
-- The panel keeps showing the old image — check you didn't set `--loops`
-  higher than intended; the image yields early only when all loops
-  complete, otherwise it holds until the TTL passes.
+- **403 "no API key has been generated"** — no key exists on the tracker
+  yet, or it was revoked. Generate one in the web UI and re-provision the
+  client (`--remember-key`).
+- **401 "Invalid or missing API key"** — the key this client sends doesn't
+  match the one the tracker expects. Re-provision it as above.
+- **Host name doesn't resolve** — pass the tracker's IP address directly
+  with `--url http://<ip>:8584`.
+- **Image clears earlier than expected** — the image yields as soon as its
+  `loops` count completes; omit `--loops` (or pass 0) to keep looping
+  until the TTL expires.
+
+## See also
+
+- [FlightTracker](https://github.com/ColinWaddell/FlightTracker) — the LED
+  panel flight tracker this client talks to. The Image Upload API is built
+  into it; keys are managed in its web UI on the Data Source page.
