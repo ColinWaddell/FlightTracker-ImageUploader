@@ -1,0 +1,10 @@
+# Local environment / secrets
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Never commit the API key
+api_key
+*.key
+.env
