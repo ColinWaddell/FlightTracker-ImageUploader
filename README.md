@@ -49,10 +49,20 @@ display window expires.
 [Pillow](https://pypi.org/project/pillow/). There are no other
 dependencies — HTTP is handled by the standard library.
 
+Clone the repo and set up a virtual environment:
+
 ```bash
-pip install pillow
 git clone https://github.com/ColinWaddell/FlightTracker-ImageUploader.git
 cd FlightTracker-ImageUploader
+python3 -m venv .venv
+source .venv/bin/activate
+pip install pillow
+```
+
+To use the uploader later without activating the venv first:
+
+```bash
+.venv/bin/python image_uploader.py photo.jpg
 ```
 
 **Flight Tracker address:** by default the uploader talks to
