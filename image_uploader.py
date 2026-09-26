@@ -200,19 +200,25 @@ def parse_args(argv=None):
         "--ttl",
         type=int,
         default=300,
-        help="seconds the image stays on screen (default: %(default)s)",
+        help=(
+            "seconds the image should stay on screen (default: %(default)s); "
+            "converted to frame_delay/loops for the API"
+        ),
     )
     parser.add_argument(
         "--loops",
         type=int,
         default=0,
-        help="animation play-throughs; 0 keeps looping until the TTL expires",
+        help="animation play-throughs (default: derived from --ttl; 1-100000)",
     )
     parser.add_argument(
         "--frame-delay",
         type=int,
         default=None,
-        help="ms between animation frames (default: source duration or 500)",
+        help=(
+            "ms each frame is held (default: source timing for animations, "
+            "--ttl for stills)"
+        ),
     )
     parser.add_argument(
         "--fit",
@@ -253,35 +259,47 @@ def main(argv=None) -> None:
 
     if args.test:
         frames = [test_pattern()]
-        frame_delay = args.frame_delay
+        source_delay = None
     else:
         frames, source_delay = load_frames(
             Path(args.image), args.fit, args.max_frames
         )
-        if args.frame_delay is not None:
-            frame_delay = args.frame_delay
-        elif len(frames) > 1 and source_delay:
-            frame_delay = max(10, int(source_delay))
-        else:
-            frame_delay = 500 if len(frames) > 1 else None
 
-    payload = {"ttl": args.ttl, "data": [base64.b64encode(f).decode() for f in frames]}
-    if len(frames) > 1:
-        if args.loops > 0:
-            payload["loops"] = args.loops
-        if frame_delay is not None:
-            payload["frame_delay"] = frame_delay
+    if args.frame_delay is not None:
+        frame_delay = args.frame_delay
+    elif len(frames) > 1 and source_delay:
+        frame_delay = max(10, int(source_delay))
+    else:
+        # Still image with no explicit timing: hold it for --ttl.
+        frame_delay = max(10, min(60000, args.ttl * 1000))
+
+    frame_delay = max(10, min(60000, frame_delay))
+
+    # Screen time is frames x frame_delay x loops.  Derive loops from
+    # --ttl unless the caller pinned it with --loops; ceil so the image
+    # never leaves the screen early.
+    total_ms = args.ttl * 1000
+    per_loop_ms = len(frames) * frame_delay
+    if args.loops > 0:
+        loops = args.loops
+    else:
+        loops = max(1, math.ceil(total_ms / per_loop_ms))
+
+    payload = {
+        "data": [base64.b64encode(f).decode() for f in frames],
+        "frame_delay": frame_delay,
+        "loops": loops,
+    }
 
     status, response = post_image(args.url, key, payload)
     if response.get("status") == "ok":
-        details = f"{response['frames']} frame(s), ttl {response['ttl']}s"
-        if len(frames) > 1:
-            details += f", delay {frame_delay}ms"
-            details += f", loops {'forever' if args.loops == 0 else args.loops}"
-            hold = response.get("frame_hold")
-            effective = response.get("effective_frame_delay_ms")
-            if hold:
-                details += f" ({hold} panel frames, {effective}ms effective)"
+        effective = response.get("effective_frame_delay_ms", frame_delay)
+        on_screen_s = effective * len(frames) * loops / 1000
+        details = (
+            f"{response['frames']} frame(s), ~{on_screen_s:.0f}s on screen, "
+            f"delay {effective}ms ({response.get('frame_hold')} panel frames), "
+            f"loops {loops}"
+        )
         print(f"Uploaded ({status}): {details}")
     else:
         print(f"Unexpected response: {response}", file=sys.stderr)

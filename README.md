@@ -24,23 +24,23 @@ display window expires.
 
    ```json
    {
-     "ttl": 300,
      "data": ["<base64 frame>", "<base64 frame>"],
      "loops": 3,
      "frame_delay": 150
    }
    ```
 
-   - `ttl` — required; seconds the image stays on screen (1 – 86400)
    - `data` — one entry per frame (1 – 60 frames); longer animations are
      sampled evenly down to the cap
-   - `loops` — optional number of play-throughs; omit to loop until the
-     TTL expires
-   - `frame_delay` — optional, ms between frames (default 500; animated
+   - `loops` — optional number of play-throughs (default 1)
+   - `frame_delay` — optional, ms each frame is held (default 500; animated
      sources use their own frame duration when available). The panel
      animates at a fixed rate (12.5 fps / 80 ms per frame at default
      display speed), so ms values are rounded to whole refresh cycles —
      the API response reports the effective delay
+
+   The image stays on screen for `frames × frame_delay × loops`, then the
+   panel returns to its normal display.
 
 3. The panel drops whatever it is showing and displays the image
    immediately. Submissions are held in the tracker's memory only — they
@@ -115,9 +115,9 @@ it with `--key-file`, or export it as `FT_IMAGE_API_KEY`.
 | `--key` | API key inline | - |
 | `--key-file` | File containing the API key | - |
 | `--remember-key` | Store the provided key for future runs | - |
-| `--ttl` | Seconds the image stays on screen | 300 |
-| `--loops` | Animation play-throughs (0 = loop until TTL) | 0 |
-| `--frame-delay` | ms between animation frames | source duration or 500 |
+| `--ttl` | Seconds the image should stay on screen (sent as frame_delay/loops) | 300 |
+| `--loops` | Animation play-throughs (0 = derive from --ttl) | 0 |
+| `--frame-delay` | ms each frame is held (default: source timing for animations, --ttl for stills) | - |
 | `--fit` | `cover` (fill + crop) or `contain` (fit + letterbox) | cover |
 | `--max-frames` | Animation frame cap (API maximum is 60) | 60 |
 | `--test` | Push a built-in colour-bars test pattern | - |
@@ -159,9 +159,9 @@ then `--key-file`, then the default key file
   match the one the tracker expects. Re-provision it as above.
 - **Host name doesn't resolve** — pass the tracker's IP address directly
   with `--url http://<ip>:8584`.
-- **Image clears earlier than expected** — the image yields as soon as its
-  `loops` count completes; omit `--loops` (or pass 0) to keep looping
-  until the TTL expires.
+- **Image clears earlier than expected** — the image yields as soon as
+  its `loops` count completes. Omit `--loops` (or pass 0) to have the
+  uploader derive a loop count from `--ttl` instead.
 
 ## See also
 
