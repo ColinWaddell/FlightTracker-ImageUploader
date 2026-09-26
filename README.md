@@ -95,7 +95,7 @@ it with `--key-file`, or export it as `FT_IMAGE_API_KEY`.
 ./image_uploader.py --fit contain --ttl 600 screenshot.png
 
 # Loop a GIF until its TTL expires, 150ms per frame
-./image_uploader.py --ttl 120 --frame-delay 150 dance.gif
+./image_uploader.py --ttl 120 --frame-ms 150 dance.gif
 
 # Play a GIF exactly twice, then clear
 ./image_uploader.py --ttl 120 --loops 2 dance.gif
@@ -115,7 +115,7 @@ it with `--key-file`, or export it as `FT_IMAGE_API_KEY`.
 | `--key` | API key inline | - |
 | `--key-file` | File containing the API key | - |
 | `--remember-key` | Store the provided key for future runs | - |
-| `--ttl` | Seconds the image should stay on screen (sent as frame_delay/loops) | 300 |
+| `--ttl` | Seconds the image should stay on screen (sent as frame_ms/loops) | 300 |
 | `--loops` | Animation play-throughs (0 = derive from --ttl) | 0 |
 | `--frame-ms` | ms each frame is held (alias: `--frame-delay`) | source timing for animations, `--ttl` for stills |
 | `--fit` | `cover` (fill + crop) or `contain` (fit + letterbox) | cover |
