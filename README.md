@@ -26,20 +26,20 @@ display window expires.
    {
      "data": ["<base64 frame>", "<base64 frame>"],
      "loops": 3,
-     "frame_delay": 150
+     "frame_ms": 150
    }
    ```
 
    - `data` — one entry per frame (1 – 60 frames); longer animations are
      sampled evenly down to the cap
    - `loops` — optional number of play-throughs (default 1)
-   - `frame_delay` — optional, ms each frame is held (default 500; animated
+   - `frame_ms` — optional, ms each frame is held (default 500; animated
      sources use their own frame duration when available). The panel
      animates at a fixed rate (12.5 fps / 80 ms per frame at default
      display speed), so ms values are rounded to whole refresh cycles —
-     the API response reports the effective delay
+     the API response reports the effective hold
 
-   The image stays on screen for `frames × frame_delay × loops`, then the
+   The image stays on screen for `frames × frame_ms × loops`, then the
    panel returns to its normal display.
 
 3. The panel drops whatever it is showing and displays the image
@@ -117,7 +117,7 @@ it with `--key-file`, or export it as `FT_IMAGE_API_KEY`.
 | `--remember-key` | Store the provided key for future runs | - |
 | `--ttl` | Seconds the image should stay on screen (sent as frame_delay/loops) | 300 |
 | `--loops` | Animation play-throughs (0 = derive from --ttl) | 0 |
-| `--frame-delay` | ms each frame is held (default: source timing for animations, --ttl for stills) | - |
+| `--frame-ms` | ms each frame is held (alias: `--frame-delay`) | source timing for animations, `--ttl` for stills |
 | `--fit` | `cover` (fill + crop) or `contain` (fit + letterbox) | cover |
 | `--max-frames` | Animation frame cap (API maximum is 60) | 60 |
 | `--test` | Push a built-in colour-bars test pattern | - |
