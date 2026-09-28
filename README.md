@@ -76,15 +76,14 @@ the `FT_IMAGE_URL` environment variable.
 **API key:** generate one in the Flight Tracker web UI under
 **Data Source → Image Upload API → Generate Key** (you can view the
 current key there any time; generating a new key revokes the old one).
-Give the key to this script once and let it remember:
+This tool never stores your key — you supply it on every run, either
+inline, via the environment, or from a file you manage yourself:
 
 ```bash
-./image_uploader.py --key 'your-key-here' --remember-key
+./image_uploader.py --key 'your-key-here' holiday.jpg
+export FT_IMAGE_API_KEY='your-key-here'
+./image_uploader.py --key-file ~/.secrets/ft-image-key holiday.jpg
 ```
-
-The key is stored at `~/.config/ft-image-upload/api_key` (mode 600). You
-can instead pass it per-run with `--key`, keep it in a file and point at
-it with `--key-file`, or export it as `FT_IMAGE_API_KEY`.
 
 ## Examples
 
@@ -120,7 +119,6 @@ it with `--key-file`, or export it as `FT_IMAGE_API_KEY`.
 | `--url` | Flight Tracker base URL | `$FT_IMAGE_URL` or `http://fivepi.local:8584` |
 | `--key` | API key inline | - |
 | `--key-file` | File containing the API key | - |
-| `--remember-key` | Store the provided key for future runs | - |
 | `--frame-ms` | ms each frame is held (alias: `--frame-delay`) | source timing for animations; `--ttl`-derived hold for stills |
 | `--loops` | Animation play-throughs (0 = derive from `--ttl`) | 0 |
 | `--ttl` | Convenience: target seconds on screen, converted client-side to `frame_ms`/`loops` — the API itself takes no ttl | 300 |
@@ -129,8 +127,7 @@ it with `--key-file`, or export it as `FT_IMAGE_API_KEY`.
 | `--test` | Push a built-in colour-bars test pattern | - |
 
 The key is resolved in this order: `--key`, then `$FT_IMAGE_API_KEY`,
-then `--key-file`, then the default key file
-(`~/.config/ft-image-upload/api_key`).
+then `--key-file`. The key is never written to disk by this tool.
 
 ## Environment variables
 
@@ -159,10 +156,10 @@ then `--key-file`, then the default key file
 ## Troubleshooting
 
 - **403 "no API key has been generated"** — no key exists on the tracker
-  yet, or it was revoked. Generate one in the web UI and re-provision the
-  client (`--remember-key`).
+  yet, or it was revoked. Generate one in the web UI and pass the new
+  key (`--key`, `--key-file`, or `$FT_IMAGE_API_KEY`).
 - **401 "Invalid or missing API key"** — the key this client sends doesn't
-  match the one the tracker expects. Re-provision it as above.
+  match the one the tracker expects. Re-check the key you're supplying.
 - **Host name doesn't resolve** — pass the tracker's IP address directly
   with `--url http://<ip>:8584`.
 - **Image clears earlier than expected** — screen time is

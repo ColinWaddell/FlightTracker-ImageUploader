@@ -15,8 +15,8 @@ Usage:
   image_uploader.py --test                      # push a built-in test pattern
   image_uploader.py --url http://10.0.0.55:8584 --key-file ./key pic.png
 
-Key resolution order:  --key  >  $FT_IMAGE_API_KEY  >  --key-file  >
-~/.config/ft-image-upload/api_key (written by --remember-key).
+Key resolution order:  --key  >  $FT_IMAGE_API_KEY  >  --key-file.
+The key is never stored or written to disk by this tool.
 """
 
 from __future__ import annotations
@@ -41,7 +41,6 @@ PANEL_W, PANEL_H = 64, 32
 FRAME_BYTES = PANEL_W * PANEL_H * 3
 MAX_FRAMES = 60
 DEFAULT_URL = "http://fivepi.local:8584"
-DEFAULT_KEY_FILE = Path.home() / ".config/ft-image-upload/api_key"
 
 
 # ---------------------------------------------------------------------------
@@ -134,15 +133,16 @@ def resolve_key(args) -> str:
     env = os.environ.get("FT_IMAGE_API_KEY", "")
     if env:
         return env
-    key_file = Path(args.key_file) if args.key_file else DEFAULT_KEY_FILE
-    if key_file.is_file():
-        key = key_file.read_text().strip()
-        if key:
-            return key
+    if args.key_file:
+        key_file = Path(args.key_file)
+        if key_file.is_file():
+            key = key_file.read_text().strip()
+            if key:
+                return key
     print(
         "No API key found. Generate one in the web UI (Data Source > "
         "Image Upload API), then pass it via --key, $FT_IMAGE_API_KEY, "
-        "--key-file, or --remember-key.",
+        "or --key-file.",
         file=sys.stderr,
     )
     sys.exit(2)
@@ -191,11 +191,6 @@ def parse_args(argv=None):
     )
     parser.add_argument("--key", help="API key (otherwise see key resolution order)")
     parser.add_argument("--key-file", help="file containing the API key")
-    parser.add_argument(
-        "--remember-key",
-        action="store_true",
-        help="store --key (or the key from --key-file) in the default key file",
-    )
     parser.add_argument(
         "--ttl",
         type=int,
@@ -253,11 +248,6 @@ def main(argv=None) -> None:
         sys.exit(2)
 
     key = resolve_key(args)
-    if args.remember_key:
-        DEFAULT_KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
-        DEFAULT_KEY_FILE.write_text(key + "\n")
-        DEFAULT_KEY_FILE.chmod(0o600)
-        print(f"Key saved to {DEFAULT_KEY_FILE}")
 
     if args.test:
         frames = [test_pattern()]
