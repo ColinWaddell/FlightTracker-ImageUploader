@@ -6,14 +6,15 @@ Command-line client that pushes images to the
 
 ```
 ./image_uploader.py photo.jpg
-./image_uploader.py --ttl 60 --loops 3 anim.gif
+./image_uploader.py --frame-ms 150 --loops 3 anim.gif
 ./image_uploader.py --test
 ```
 
 Any format Pillow can read works — PNG, JPEG, WebP, GIF, BMP, TIFF...
 Still images are sent as a single frame; animated GIF/WebP files are sent
-as multi-frame animations that play on the panel until they finish or the
-display window expires.
+as multi-frame animations that play on the panel until they have played
+through the requested number of loops. Screen time is always
+`frames × frame_ms × loops`.
 
 ## How it works
 
@@ -88,17 +89,21 @@ it with `--key-file`, or export it as `FT_IMAGE_API_KEY`.
 ## Examples
 
 ```bash
-# Show a photo for the default 5 minutes
+# Show a photo — held for the default 5 minutes (--ttl 300)
 ./image_uploader.py holiday.jpg
 
-# Letterboxed instead of cropped, 10 minutes
-./image_uploader.py --fit contain --ttl 600 screenshot.png
+# Loop a GIF at 150ms per frame, three play-throughs, then clear
+./image_uploader.py --frame-ms 150 --loops 3 anim.gif
 
-# Loop a GIF until its TTL expires, 150ms per frame
-./image_uploader.py --ttl 120 --frame-ms 150 dance.gif
+# Play a GIF exactly once at its own embedded frame timing, then clear
+./image_uploader.py --loops 1 dance.gif
 
-# Play a GIF exactly twice, then clear
-./image_uploader.py --ttl 120 --loops 2 dance.gif
+# Letterbox a screenshot instead of cropping (held for the default 5 minutes)
+./image_uploader.py --fit contain screenshot.png
+
+# Convenience: keep an image up for ~10 minutes — --ttl is a client-side
+# target that gets converted to frame_ms/loops (the API itself takes no ttl)
+./image_uploader.py --ttl 600 holiday.jpg
 
 # Quick sanity check (colour bars, 20 seconds)
 ./image_uploader.py --test --ttl 20
@@ -115,9 +120,9 @@ it with `--key-file`, or export it as `FT_IMAGE_API_KEY`.
 | `--key` | API key inline | - |
 | `--key-file` | File containing the API key | - |
 | `--remember-key` | Store the provided key for future runs | - |
-| `--ttl` | Seconds the image should stay on screen (sent as frame_ms/loops) | 300 |
-| `--loops` | Animation play-throughs (0 = derive from --ttl) | 0 |
-| `--frame-ms` | ms each frame is held (alias: `--frame-delay`) | source timing for animations, `--ttl` for stills |
+| `--frame-ms` | ms each frame is held (alias: `--frame-delay`) | source timing for animations; `--ttl`-derived hold for stills |
+| `--loops` | Animation play-throughs (0 = derive from `--ttl`) | 0 |
+| `--ttl` | Convenience: target seconds on screen, converted client-side to `frame_ms`/`loops` — the API itself takes no ttl | 300 |
 | `--fit` | `cover` (fill + crop) or `contain` (fit + letterbox) | cover |
 | `--max-frames` | Animation frame cap (API maximum is 60) | 60 |
 | `--test` | Push a built-in colour-bars test pattern | - |
@@ -159,9 +164,11 @@ then `--key-file`, then the default key file
   match the one the tracker expects. Re-provision it as above.
 - **Host name doesn't resolve** — pass the tracker's IP address directly
   with `--url http://<ip>:8584`.
-- **Image clears earlier than expected** — the image yields as soon as
-  its `loops` count completes. Omit `--loops` (or pass 0) to have the
-  uploader derive a loop count from `--ttl` instead.
+- **Image clears earlier than expected** — screen time is
+  `frames × frame_ms × loops` and the image yields as soon as its loops
+  complete. Pin `--loops`, or give a total like `--ttl 600` and let the
+  uploader derive the loop count. Note a pinned `--loops` ignores
+  `--ttl`.
 
 ## See also
 
