@@ -11,7 +11,7 @@ Requires Pillow:  pip install pillow
 
 Usage:
   image_uploader.py photo.jpg
-  image_uploader.py --frame-ms 150 --loops 3 animation.gif
+  image_uploader.py --frame-ms 160 --loops 3 animation.gif
   image_uploader.py --test                      # push a built-in test pattern
   image_uploader.py --url http://10.0.0.55:8584 --key-file ./key pic.png
 

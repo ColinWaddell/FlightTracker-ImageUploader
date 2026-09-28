@@ -6,7 +6,7 @@ Command-line client that pushes images to the
 
 ```
 ./image_uploader.py photo.jpg
-./image_uploader.py --frame-ms 150 --loops 3 anim.gif
+./image_uploader.py --frame-ms 160 --loops 3 anim.gif
 ./image_uploader.py --test
 ```
 
@@ -27,7 +27,7 @@ through the requested number of loops. Screen time is always
    {
      "data": ["<base64 frame>", "<base64 frame>"],
      "loops": 3,
-     "frame_ms": 150
+     "frame_ms": 160
    }
    ```
 
@@ -92,8 +92,9 @@ it with `--key-file`, or export it as `FT_IMAGE_API_KEY`.
 # Show a photo — held for the default 5 minutes (--ttl 300)
 ./image_uploader.py holiday.jpg
 
-# Loop a GIF at 150ms per frame, three play-throughs, then clear
-./image_uploader.py --frame-ms 150 --loops 3 anim.gif
+# Loop a GIF at 160ms per frame (2 panel refresh cycles), three
+# play-throughs, then clear
+./image_uploader.py --frame-ms 160 --loops 3 anim.gif
 
 # Play a GIF exactly once at its own embedded frame timing, then clear
 ./image_uploader.py --loops 1 dance.gif
